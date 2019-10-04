@@ -30,7 +30,6 @@ router.get('/:id', validateProjectId, (req, res) => {
 router.get('/:id/actions', async (req, res) => {
   try {
     const actions = projectDb.getProjectActions(req.params.id)
-    console.log('actions',actions)
     res.status(200).json(actions)
   } catch (error) {
     // log error to server
@@ -53,19 +52,56 @@ router.post('/', validateProject, async (req, res) => {
 })
 
 // POST - add new action to project
-router.post('/:id', validateProjectId, validateAction, async (req, res) => {})
+router.post('/:id', validateAction, async (req, res) => {
+  // project_id is aded in validateAction middleware
+  try {
+    const newAction = await actionDb.insert(req.body)
+    res.status(201).json(newAction)
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding project action' })
+  }
+})
 
 // PUT - update a project
-router.put('/:id', (req, res) => {})
+router.put('/:id', validateProject, async (req, res) => {
+  try {
+    const updatedProject = await projectDb.update(req.params.id, req.body)
+    if (updatedProject) {
+      res.status(200).json(updatedProject)
+    } else {
+      res.status(400).json({ message: 'project Id invalid' })
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating project' })
+  }
+})
 
 // PUT - update a action for a project
-router.put('/:projectId/action/:actionId', (req, res) => {})
+router.put('/:id/actions/:actionId', validateAction, async (req, res) => {
+  // checks if project matches associated action project_id
+  if (req.params.id !== req.body.project_id) {
+    res.status(400).json({message: "project id is not associated with action"})
+  }
+
+  try {
+    const updatedAction = await actionDb.update(req.params.actionId, req.body)
+    if (updatedAction) {
+      res.status(200).json(updatedAction)
+    } else {
+      res.status(400).json({message: "Error updating action"})
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error updating project's action" })
+  }
+})
 
 // DELETE - delete a project
-router.delete('/:id', (req, res) => {})
+router.delete('/:id', (req, res) => {
+
+})
 
 // DELETE - delete an action from a project
-router.delete('/:projectId/action/:actionId', (req, res) => {})
+router.delete('/:id/action/:actionId', (req, res) => {})
 
 // CUSTOM MIDDLEWARE
 // validate project id and add project body to req
@@ -106,6 +142,9 @@ function validateProject(req, res, next) {
 // validates the body on a request to create a new action
 function validateAction(req, res, next) {
   console.log('____VALIDATE ACTION RAN____')
+  // sets req.param.id as action's associated project ID
+  req.body.project_id = req.params.id
+
   if (JSON.stringify(req.body) === '{}') {
     // check if body has data
     res.status(400).json({ message: 'missing post data' })

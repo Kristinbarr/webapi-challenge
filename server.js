@@ -1,12 +1,14 @@
 const express = require('express')
 const helmet = require('helmet')
-const router = require('./router')
+const projectRouter = require('./routers/projectRouter')
+const actionRouter = require('./routers/actionRouter')
 
 const server = express()
 
 // global middleware
 server.use(express.json())
-server.use('/api/projects', logger, router)
+server.use('/api/projects', logger, projectRouter)
+server.use('/api/actions', logger, actionRouter)
 
 // custom logger middleware
 function logger(req, res, next) {

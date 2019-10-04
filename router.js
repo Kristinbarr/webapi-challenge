@@ -96,12 +96,39 @@ router.put('/:id/actions/:actionId', validateAction, async (req, res) => {
 })
 
 // DELETE - delete a project
-router.delete('/:id', (req, res) => {
-
+router.delete('/:id', validateProjectId, async (req, res) => {
+  try {
+    const deleted = await projectDb.remove(req.params.id)
+    if (deleted) {
+      res.status(204).json(deleted)
+    } else {
+      res.status(400).json({ message: 'project Id invalid' })
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting project' })
+  }
 })
 
 // DELETE - delete an action from a project
-router.delete('/:id/action/:actionId', (req, res) => {})
+router.delete('/:id/action/:actionId', validateAction, async (req, res) => {
+    // checks if project matches associated action project_id
+  if (req.params.id !== req.body.project_id) {
+    res
+      .status(400)
+      .json({ message: 'project id is not associated with action' })
+  }
+
+  try {
+    const deletedAction = await actionDb.remove(req.params.actionId)
+    if (deletedAction) {
+      res.status(204).json(deletedAction)
+    } else {
+      res.status(400).json({ message: 'action Id invalid' })
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting project's action" })
+  }
+})
 
 // CUSTOM MIDDLEWARE
 // validate project id and add project body to req

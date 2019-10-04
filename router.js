@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 })
 
 // GET - project by id
-router.get('/:id', validateProjectId, async (req, res) => {
+router.get('/:id', validateProjectId, (req, res) => {
   // req.project is added by validationProjectId middleware
   if (req.project) {
     res.status(200).json(req.project)
@@ -26,11 +26,25 @@ router.get('/:id', validateProjectId, async (req, res) => {
   }
 })
 
+// GET - get project actions
+router.get('/:id/actions', async (req, res) => {
+  try {
+    const actions = projectDb.getProjectActions(req.params.id)
+    console.log('actions',actions)
+    res.status(200).json(actions)
+  } catch (error) {
+    // log error to server
+    console.log(error)
+    res.status(500).json({ message: 'Error retrieving actions' })
+  }
+})
+
 // POST - add new project
 router.post('/', validateProject, async (req, res) => {
   try {
     const project = req.body
-    await projectDb.insert(project)
+    const newProject = await projectDb.insert(project)
+    res.status(201).json(newProject)
   } catch (error) {
     // log error to server
     console.log(error)
@@ -39,7 +53,7 @@ router.post('/', validateProject, async (req, res) => {
 })
 
 // POST - add new action to project
-router.post('/:id', (req, res) => {})
+router.post('/:id', validateProjectId, validateAction, async (req, res) => {})
 
 // PUT - update a project
 router.put('/:id', (req, res) => {})
@@ -56,7 +70,6 @@ router.delete('/:projectId/action/:actionId', (req, res) => {})
 // CUSTOM MIDDLEWARE
 // validate project id and add project body to req
 async function validateProjectId(req, res, next) {
-  console.log('req.body: ', req.params.id)
   try {
     const project = await projectDb.get(req.params.id)
     if (project) {

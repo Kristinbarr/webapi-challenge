@@ -53,7 +53,7 @@ router.post('/', validateProject, async (req, res) => {
 
 // POST - add new action to project
 router.post('/:id', validateAction, async (req, res) => {
-  // project_id is aded in validateAction middleware
+  // project_id is added in validateAction middleware
   try {
     const newAction = await actionDb.insert(req.body)
     res.status(201).json(newAction)
@@ -78,17 +78,13 @@ router.put('/:id', validateProject, async (req, res) => {
 
 // PUT - update a action for a project
 router.put('/:id/actions/:actionId', validateAction, async (req, res) => {
-  // checks if project matches associated action project_id
-  if (req.params.id !== req.body.project_id) {
-    res.status(400).json({message: "project id is not associated with action"})
-  }
 
   try {
     const updatedAction = await actionDb.update(req.params.actionId, req.body)
     if (updatedAction) {
       res.status(200).json(updatedAction)
     } else {
-      res.status(400).json({message: "Error updating action"})
+      res.status(400).json({ message: 'Error updating action' })
     }
   } catch (error) {
     res.status(500).json({ message: "Error updating project's action" })
@@ -100,7 +96,7 @@ router.delete('/:id', validateProjectId, async (req, res) => {
   try {
     const deleted = await projectDb.remove(req.params.id)
     if (deleted) {
-      res.status(204).json(deleted)
+      res.status(200).json(deleted)
     } else {
       res.status(400).json({ message: 'project Id invalid' })
     }
@@ -110,14 +106,7 @@ router.delete('/:id', validateProjectId, async (req, res) => {
 })
 
 // DELETE - delete an action from a project
-router.delete('/:id/action/:actionId', validateAction, async (req, res) => {
-    // checks if project matches associated action project_id
-  if (req.params.id !== req.body.project_id) {
-    res
-      .status(400)
-      .json({ message: 'project id is not associated with action' })
-  }
-
+router.delete('/:id/actions/:actionId', async (req, res) => {
   try {
     const deletedAction = await actionDb.remove(req.params.actionId)
     if (deletedAction) {
@@ -133,10 +122,10 @@ router.delete('/:id/action/:actionId', validateAction, async (req, res) => {
 // CUSTOM MIDDLEWARE
 // validate project id and add project body to req
 async function validateProjectId(req, res, next) {
+  console.log('____VALIDATE PROJECT ID RAN___')
   try {
     const project = await projectDb.get(req.params.id)
     if (project) {
-      console.log('____VALIDATE PROJECT ID RAN___')
       req.project = project
       next()
     } else {
@@ -169,6 +158,7 @@ function validateProject(req, res, next) {
 // validates the body on a request to create a new action
 function validateAction(req, res, next) {
   console.log('____VALIDATE ACTION RAN____')
+
   // sets req.param.id as action's associated project ID
   req.body.project_id = req.params.id
 

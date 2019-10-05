@@ -1,5 +1,6 @@
 const express = require('express')
 const projectDb = require('../data/helpers/projectModel')
+const { validateProject, validateProjectId } = require('../middleware')
 
 const projectRouter = express.Router()
 
@@ -31,7 +32,6 @@ projectRouter.post('/', validateProject, async (req, res) => {
     const newProject = await projectDb.insert(req.body)
     res.status(201).json(newProject)
   } catch (error) {
-    // log error to server
     console.log(error)
     res.status(500).json({ message: 'Error adding project' })
   }
@@ -47,6 +47,7 @@ projectRouter.put('/:id', validateProject, async (req, res) => {
       res.status(400).json({ message: 'project Id invalid' })
     }
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: 'Error updating project' })
   }
 })
@@ -61,45 +62,9 @@ projectRouter.delete('/:id', validateProjectId, async (req, res) => {
       res.status(400).json({ message: 'project Id invalid' })
     }
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: 'Error deleting project' })
   }
 })
-
-// CUSTOM MIDDLEWARE
-
-// validate project id and add project body to req
-async function validateProjectId(req, res, next) {
-  console.log('____VALIDATE PROJECT ID RAN___')
-  try {
-    const project = await projectDb.get(req.params.id)
-    if (project) {
-      req.project = project
-      next()
-    } else {
-      res.status(400).json({ message: 'invalid project id' })
-    }
-  } catch (error) {
-    res.status(500).json({
-      error: 'There was an error while validating project id'
-    })
-  }
-}
-
-// validates the body on a request to create a new project
-function validateProject(req, res, next) {
-  console.log('____VALIDATE PROJECT RAN____')
-  if (JSON.stringify(req.body) === '{}') {
-    // check if body has data
-    res.status(400).json({ message: 'missing project data' })
-  } else if (!req.body.name) {
-    // checks if body name exists
-    res.status(400).json({ message: 'missing required name field' })
-  } else if (!req.body.description) {
-    // checks if body description exists
-    res.status(400).json({ message: 'missing required description field' })
-  } else {
-    next()
-  }
-}
 
 module.exports = projectRouter
